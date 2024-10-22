@@ -8,13 +8,13 @@ const firebaseConfig = {
     appId: "1:526541421782:web:f30e51e754c3ebe6781d77"
   };
 
-// Initialize Firebase
+// Inicializace Firebase
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Pøidání nebo aktualizace slova
-document.getElementById('wordForm').addEventListener('submit', async (event) => {
-    event.preventDefault();
+// Pøidání/aktualizace slova
+document.getElementById('wordForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); // Zabránit obnovení stránky
 
     const word = document.getElementById('word').value;
     const english = document.getElementById('english').value;
@@ -23,66 +23,50 @@ document.getElementById('wordForm').addEventListener('submit', async (event) => 
     const pronunciation = document.getElementById('pronunciation').value;
     const example_sentence = document.getElementById('example_sentence').value;
 
-    const wordRef = db.collection('dictionary').doc(word);
-    const doc = await wordRef.get();
+    // Vyhledání slova v databázi
+    const existingDoc = await db.collection('dictionary').doc(word).get();
 
-    if (doc.exists) {
-        // Záznam existuje, zeptejte se uživatele, zda chce aktualizovat
-        const update = confirm(`The word "${word}" already exists. Do you want to update it?`);
-        if (update) {
-            await wordRef.update({
-                english,
-                czech,
-                part_of_speech,
-                pronunciation,
-                example_sentence
-            });
-            alert('Word updated successfully!');
-        } else {
-            alert('No changes made.');
-        }
-    } else {
-        // Pøidejte nové slovo
-        await wordRef.set({
-            english,
-            czech,
-            part_of_speech,
-            pronunciation,
-            example_sentence
-        });
-        alert('Word added successfully!');
+    if (existingDoc.exists) {
+        // Pokud slovo existuje, požádejte uživatele o potvrzení aktualizace
+        const confirmUpdate = confirm('Word already exists. Do you want to update it?');
+        if (!confirmUpdate) return;
     }
 
-    // Reset formuláøe
+    // Uložení nebo aktualizace slova
+    await db.collection('dictionary').doc(word).set({
+        english: english,
+        czech: czech,
+        part_of_speech: part_of_speech,
+        pronunciation: pronunciation,
+        example_sentence: example_sentence
+    });
+
+    alert('Word saved successfully!');
+
+    // Vymazání formuláøe
     document.getElementById('wordForm').reset();
 });
 
 // Vyhledávání slov
 async function searchWord() {
-    const searchTerm = document.getElementById('search').value.toLowerCase();
+    const searchInput = document.getElementById('search').value;
     const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = ''; // Vymažte pøedchozí výsledky
+    resultsDiv.innerHTML = ''; // Vymazání starých výsledkù
+
+    if (searchInput.length < 1) return; // Pokud není nic zadáno, neprovádìjte vyhledávání
 
     const snapshot = await db.collection('dictionary').get();
+
     snapshot.forEach(doc => {
         const data = doc.data();
-        if (doc.id.toLowerCase().startsWith(searchTerm)) {
+        const word = doc.id;
+
+        // Kontrola, zda hledané slovo zaèíná na zadané znaky
+        if (word.startsWith(searchInput)) {
             const resultItem = document.createElement('div');
             resultItem.classList.add('result-item');
-            resultItem.textContent = `${doc.id} (English: ${data.english}, Czech: ${data.czech})`;
-            resultItem.onclick = () => fillForm(doc.id, data);
+            resultItem.innerHTML = `<strong>${word}</strong>: English - ${data.english}, Czech - ${data.czech}`;
             resultsDiv.appendChild(resultItem);
         }
     });
-}
-
-// Vyplnìní formuláøe pøi kliknutí na výsledek
-function fillForm(word, data) {
-    document.getElementById('word').value = word;
-    document.getElementById('english').value = data.english;
-    document.getElementById('czech').value = data.czech;
-    document.getElementById('part_of_speech').value = data.part_of_speech;
-    document.getElementById('pronunciation').value = data.pronunciation;
-    document.getElementById('example_sentence').value = data.example_sentence;
-    document.getElementById('results').innerHTML = ''; // Vymažte výsledky
 }

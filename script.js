@@ -8,8 +8,9 @@ const firebaseConfig = {
     appId: "1:526541421782:web:f30e51e754c3ebe6781d77"
   };
 
+
 // Inicializace Firebase
-const app = firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // Pøidání/aktualizace slova

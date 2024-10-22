@@ -1,47 +1,88 @@
-// Inicializace prázdného slovníku nebo nactení z LocalStorage
-let dictionary = JSON.parse(localStorage.getItem('tamilDictionary')) || {};
-
-// Funkce pro pridání slovícka do slovníku
-document.getElementById('wordForm').addEventListener('submit', function(event) {
-  event.preventDefault();
-
-  const tamilWord = document.getElementById('tamilWord').value;
-  const englishTranslation = document.getElementById('englishTranslation').value;
-  const partOfSpeech = document.getElementById('partOfSpeech').value;
-  const pronunciation = document.getElementById('pronunciation').value;
-  const exampleSentence = document.getElementById('exampleSentence').value;
-
-  // Uložení slovícka do objektu slovníku
-  dictionary[tamilWord] = {
-    "english": englishTranslation,
-    "part_of_speech": partOfSpeech,
-    "pronunciation": pronunciation,
-    "example_sentence": exampleSentence
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyB4XLAUaI4jH95Og6MhK9p7U01wV_1uv0Q",
+    authDomain: "tamildictinarydb.firebaseapp.com",
+    projectId: "tamildictinarydb",
+    storageBucket: "tamildictinarydb.appspot.com",
+    messagingSenderId: "526541421782",
+    appId: "1:526541421782:web:f30e51e754c3ebe6781d77"
   };
 
-  // Uložení slovníku do LocalStorage
-  localStorage.setItem('tamilDictionary', JSON.stringify(dictionary));
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-  alert(`Word '${tamilWord}' added to the dictionary!`);
+// Pøidání nebo aktualizace slova
+document.getElementById('wordForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
 
-  // Vymazání formuláre
-  document.getElementById('wordForm').reset();
+    const word = document.getElementById('word').value;
+    const english = document.getElementById('english').value;
+    const czech = document.getElementById('czech').value;
+    const part_of_speech = document.getElementById('part_of_speech').value;
+    const pronunciation = document.getElementById('pronunciation').value;
+    const example_sentence = document.getElementById('example_sentence').value;
+
+    const wordRef = db.collection('dictionary').doc(word);
+    const doc = await wordRef.get();
+
+    if (doc.exists) {
+        // Záznam existuje, zeptejte se uživatele, zda chce aktualizovat
+        const update = confirm(`The word "${word}" already exists. Do you want to update it?`);
+        if (update) {
+            await wordRef.update({
+                english,
+                czech,
+                part_of_speech,
+                pronunciation,
+                example_sentence
+            });
+            alert('Word updated successfully!');
+        } else {
+            alert('No changes made.');
+        }
+    } else {
+        // Pøidejte nové slovo
+        await wordRef.set({
+            english,
+            czech,
+            part_of_speech,
+            pronunciation,
+            example_sentence
+        });
+        alert('Word added successfully!');
+    }
+
+    // Reset formuláøe
+    document.getElementById('wordForm').reset();
 });
 
-// Funkce pro vyhledávání ve slovníku
-function searchDictionary() {
-  const searchWord = document.getElementById('searchWord').value;
+// Vyhledávání slov
+async function searchWord() {
+    const searchTerm = document.getElementById('search').value.toLowerCase();
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = ''; // Vymažte pøedchozí výsledky
 
-  if (dictionary[searchWord]) {
-    const wordData = dictionary[searchWord];
-    document.getElementById('searchResult').innerHTML = `
-      <h4>Results for '${searchWord}':</h4>
-      <p><strong>English Translation:</strong> ${wordData.english}</p>
-      <p><strong>Part of Speech:</strong> ${wordData.part_of_speech}</p>
-      <p><strong>Pronunciation:</strong> ${wordData.pronunciation}</p>
-      <p><strong>Example Sentence:</strong> ${wordData.example_sentence}</p>
-    `;
-  } else {
-    document.getElementById('searchResult').innerHTML = `<p>No results found for '${searchWord}'.</p>`;
-  }
+    const snapshot = await db.collection('dictionary').get();
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (doc.id.toLowerCase().startsWith(searchTerm)) {
+            const resultItem = document.createElement('div');
+            resultItem.classList.add('result-item');
+            resultItem.textContent = `${doc.id} (English: ${data.english}, Czech: ${data.czech})`;
+            resultItem.onclick = () => fillForm(doc.id, data);
+            resultsDiv.appendChild(resultItem);
+        }
+    });
+}
+
+// Vyplnìní formuláøe pøi kliknutí na výsledek
+function fillForm(word, data) {
+    document.getElementById('word').value = word;
+    document.getElementById('english').value = data.english;
+    document.getElementById('czech').value = data.czech;
+    document.getElementById('part_of_speech').value = data.part_of_speech;
+    document.getElementById('pronunciation').value = data.pronunciation;
+    document.getElementById('example_sentence').value = data.example_sentence;
+    document.getElementById('results').innerHTML = ''; // Vymažte výsledky
 }

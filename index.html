@@ -1,42 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tamil Dictionary</title>
-  <link rel="stylesheet" href="style.css"> <!-- Volitelný CSS soubor -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamil Dictionary</title>
+    <script src="https://www.gstatic.com/firebasejs/9.12.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.12.0/firebase-firestore.js"></script>
+    <script src="script.js" defer></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #results { border: 1px solid #ccc; max-height: 200px; overflow-y: scroll; }
+        .result-item { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; }
+    </style>
 </head>
 <body>
-  <h1>Tamil to English Dictionary</h1>
 
-  <!-- Formulár pro pridání slovícka -->
-  <form id="wordForm">
-    <h3>Add New Word</h3>
-    <label for="tamilWord">Tamil Word:</label>
-    <input type="text" id="tamilWord" required><br>
+<h1>Tamil Dictionary</h1>
 
-    <label for="englishTranslation">English Translation:</label>
-    <input type="text" id="englishTranslation" required><br>
-
-    <label for="partOfSpeech">Part of Speech:</label>
-    <input type="text" id="partOfSpeech" required><br>
-
+<!-- Formulár pro pridání nového slova -->
+<form id="wordForm">
+    <label for="word">Word (Tamil):</label>
+    <input type="text" id="word" name="word" required>
+    
+    <label for="english">English:</label>
+    <input type="text" id="english" name="english" required>
+    
+    <label for="czech">Czech:</label>
+    <input type="text" id="czech" name="czech" required>
+    
+    <label for="part_of_speech">Part of Speech:</label>
+    <input type="text" id="part_of_speech" name="part_of_speech" required>
+    
     <label for="pronunciation">Pronunciation:</label>
-    <input type="text" id="pronunciation" required><br>
+    <input type="text" id="pronunciation" name="pronunciation" required>
+    
+    <label for="example_sentence">Example Sentence:</label>
+    <input type="text" id="example_sentence" name="example_sentence" required>
+    
+    <button type="submit">Add/Update</button>
+</form>
 
-    <label for="exampleSentence">Example Sentence:</label>
-    <input type="text" id="exampleSentence" required><br>
+<!-- Vyhledávací pole -->
+<input type="text" id="search" placeholder="Search..." onkeyup="searchWord()">
+<div id="results"></div>
 
-    <button type="submit">Add Word</button>
-  </form>
-
-  <!-- Vyhledávací pole -->
-  <h3>Search Dictionary</h3>
-  <input type="text" id="searchWord" placeholder="Search Tamil Word...">
-  <button onclick="searchDictionary()">Search</button>
-
-  <div id="searchResult"></div>
-
-  <script src="script.js"></script>
 </body>
 </html>

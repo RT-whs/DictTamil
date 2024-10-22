@@ -23,28 +23,44 @@ document.getElementById('wordForm').addEventListener('submit', async (e) => {
     const pronunciation = document.getElementById('pronunciation').value;
     const example_sentence = document.getElementById('example_sentence').value;
 
-    // Vyhledání slova v databázi
-    const existingDoc = await db.collection('dictionary').doc(word).get();
+    console.log("Starting word submission...");
+    console.log(`Word: ${word}, English: ${english}, Czech: ${czech}`);
 
-    if (existingDoc.exists) {
-        // Pokud slovo existuje, požádejte uživatele o potvrzení aktualizace
-        const confirmUpdate = confirm('Word already exists. Do you want to update it?');
-        if (!confirmUpdate) return;
+    // Zkontrolujte, zda formuláø není prázdný
+    if (!word || !english || !czech || !part_of_speech || !pronunciation || !example_sentence) {
+        alert("Please fill out all fields.");
+        return;
     }
 
-    // Uložení nebo aktualizace slova
-    await db.collection('dictionary').doc(word).set({
-        english: english,
-        czech: czech,
-        part_of_speech: part_of_speech,
-        pronunciation: pronunciation,
-        example_sentence: example_sentence
-    });
+    try {
+        // Vyhledání slova v databázi
+        const existingDoc = await db.collection('dictionary').doc(word).get();
 
-    alert('Word saved successfully!');
+        if (existingDoc.exists) {
+            console.log("Word already exists in Firestore.");
+            const confirmUpdate = confirm('Word already exists. Do you want to update it?');
+            if (!confirmUpdate) return;
+        }
 
-    // Vymazání formuláøe
-    document.getElementById('wordForm').reset();
+        // Uložení nebo aktualizace slova
+        await db.collection('dictionary').doc(word).set({
+            english: english,
+            czech: czech,
+            part_of_speech: part_of_speech,
+            pronunciation: pronunciation,
+            example_sentence: example_sentence
+        });
+
+        console.log("Word saved successfully!");
+        alert('Word saved successfully!');
+
+        // Vymazání formuláøe
+        document.getElementById('wordForm').reset();
+
+    } catch (error) {
+        console.error("Error saving word: ", error);
+        alert("Failed to save word. Check console for details.");
+    }
 });
 
 // Vyhledávání slov
@@ -55,18 +71,25 @@ async function searchWord() {
 
     if (searchInput.length < 1) return; // Pokud není nic zadáno, neprovádìjte vyhledávání
 
-    const snapshot = await db.collection('dictionary').get();
+    console.log(`Searching for words starting with: ${searchInput}`);
 
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        const word = doc.id;
+    try {
+        const snapshot = await db.collection('dictionary').get();
 
-        // Kontrola, zda hledané slovo zaèíná na zadané znaky
-        if (word.startsWith(searchInput)) {
-            const resultItem = document.createElement('div');
-            resultItem.classList.add('result-item');
-            resultItem.innerHTML = `<strong>${word}</strong>: English - ${data.english}, Czech - ${data.czech}`;
-            resultsDiv.appendChild(resultItem);
-        }
-    });
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const word = doc.id;
+
+            // Kontrola, zda hledané slovo zaèíná na zadané znaky
+            if (word.startsWith(searchInput)) {
+                const resultItem = document.createElement('div');
+                resultItem.classList.add('result-item');
+                resultItem.innerHTML = `<strong>${word}</strong>: English - ${data.english}, Czech - ${data.czech}`;
+                resultsDiv.appendChild(resultItem);
+            }
+        });
+
+    } catch (error) {
+        console.error("Error fetching words: ", error);
+    }
 }
